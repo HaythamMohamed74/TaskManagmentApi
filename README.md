@@ -102,8 +102,13 @@ they're intentionally simple defaults for review purposes.
 
 ## Authentication & authorization
 
-- `POST /api/auth/register` — anyone can register (always as role `User`).
-- `POST /api/auth/login` — returns a JWT bearer token.
+- `POST /api/auth/register` — anyone can register (always as role `User`). Returns an
+  access token + refresh token pair.
+- `POST /api/auth/login` — returns an access token + refresh token pair.
+- `POST /api/auth/refresh` — exchanges a still-valid refresh token for a new pair.
+  The old refresh token is revoked immediately (rotation), so a leaked/stolen refresh
+  token that's already been used once is a dead end for an attacker.
+- `POST /api/auth/logout` — revokes a refresh token (requires an access token).
 - `GET /api/auth/me` — returns the current user's profile (any authenticated user).
 - `GET/POST/DELETE /api/admin/users/*` — **Admin role only** (`[Authorize(Roles = "Admin")]`).
 - `POST/GET/PUT /api/tasks/*` — any authenticated user; a user may only read/update
@@ -161,9 +166,12 @@ external broker (RabbitMQ/etc.), per the task instructions.
 - **Soft delete for users** — `DELETE /api/admin/users/{id}` sets `IsDeleted = true`
   rather than removing the row; deleted users are excluded from `GetAll`, login, and
   existence checks via an EF Core global query filter.
-
-Not implemented (out of scope for the time box): refresh tokens — access tokens simply
-expire after 60 minutes (configurable via `Jwt:ExpiryMinutes`) and the user logs in again.
+- **Refresh tokens** — opaque, cryptographically random tokens (64 random bytes,
+  `RandomNumberGenerator`) stored in a `RefreshTokens` table, valid for 7 days. Using one
+  via `/api/auth/refresh` rotates it (the old one is revoked, a new pair is issued), and
+  `/api/auth/logout` revokes one explicitly. Access tokens stay short-lived (60 minutes,
+  configurable via `Jwt:ExpiryMinutes`); refresh tokens are how a client stays signed in
+  without re-entering credentials every hour.
 
 ## Assumptions
 
