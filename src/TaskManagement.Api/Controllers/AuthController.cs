@@ -1,0 +1,41 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TaskManagement.Application.DTOs;
+using TaskManagement.Application.Interfaces;
+
+namespace TaskManagement.Api.Controllers;
+
+[ApiController]
+[Route("api/auth")]
+public class AuthController(IAuthService authService, ICurrentUserService currentUserService) : ControllerBase
+{
+    /// <summary>Register a new user account.</summary>
+    [HttpPost("register")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
+    public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request, CancellationToken ct)
+    {
+        var result = await authService.RegisterAsync(request, ct);
+        return CreatedAtAction(nameof(Me), null, result);
+    }
+
+    /// <summary>Log in and receive a JWT access token.</summary>
+    [HttpPost("login")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AuthResponse>> Login(LoginRequest request, CancellationToken ct)
+    {
+        var result = await authService.LoginAsync(request, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Get the currently authenticated user's profile.</summary>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<UserDto>> Me(CancellationToken ct)
+    {
+        var result = await authService.GetCurrentUserAsync(currentUserService.UserId, ct);
+        return Ok(result);
+    }
+}

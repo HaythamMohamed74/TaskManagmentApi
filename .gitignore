@@ -1,0 +1,19 @@
+## .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+
+## IDE
+.vs/
+.vscode/
+*.swp
+
+## Logs
+*.log
+
+## OS
+.DS_Store
+Thumbs.db
+.claude/scheduled_tasks.lock
