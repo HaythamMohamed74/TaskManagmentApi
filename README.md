@@ -65,10 +65,10 @@ and seeds the admin user automatically on startup. Once healthy, browse to:
 ### Option B — Run locally against a SQL Server instance you already have
 
 Requires the .NET 10 SDK and any local SQL Server instance — LocalDB or SQL Server
-Express both work (this repo's `appsettings.json` is currently set up for a named
-SQL Server Express instance, `DESKTOP-FUGSEM3\SQLEXPRESS`; adjust
-`ConnectionStrings:DefaultConnection` to match your own instance name, e.g.
-`Server=(localdb)\mssqllocaldb;...` for LocalDB). You'll also need a Redis instance
+Express both work (this repo's `appsettings.json` defaults to LocalDB,
+`Server=(localdb)\mssqllocaldb;...`; adjust `ConnectionStrings:DefaultConnection` if
+you're using a named SQL Server Express instance instead, e.g.
+`Server=YOUR-MACHINE\SQLEXPRESS;...`). You'll also need a Redis instance
 reachable at `localhost:6379` — the easiest way is `docker run -p 6379:6379 redis:7-alpine`
 if you have Docker, or point `ConnectionStrings:Redis` in `appsettings.json` at any Redis
 you have.
