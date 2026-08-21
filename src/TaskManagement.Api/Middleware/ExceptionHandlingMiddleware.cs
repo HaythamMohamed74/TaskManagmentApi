@@ -40,9 +40,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
     {
         NotFoundException => (HttpStatusCode.NotFound, "Not Found"),
         ConflictException => (HttpStatusCode.Conflict, "Conflict"),
-        ForbiddenException => (HttpStatusCode.Forbidden, "Forbidden"),
         UnauthorizedException => (HttpStatusCode.Unauthorized, "Unauthorized"),
-        ValidationException => (HttpStatusCode.BadRequest, "Validation Error"),
         ArgumentException => (HttpStatusCode.BadRequest, "Bad Request"),
         _ => (HttpStatusCode.InternalServerError, "Internal Server Error")
     };

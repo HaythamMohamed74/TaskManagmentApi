@@ -22,8 +22,6 @@ public class UserRepository(AppDbContext context) : IUserRepository
         return Task.CompletedTask;
     }
 
-    public void Remove(User user) => context.Users.Remove(user);
-
     public Task<bool> ExistsByEmailAsync(string email, CancellationToken ct = default) =>
         context.Users.AnyAsync(u => u.Email == email.Trim().ToLower(), ct);
 

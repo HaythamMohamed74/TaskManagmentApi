@@ -16,16 +16,6 @@ public class ConflictException : DomainException
     public ConflictException(string message) : base(message) { }
 }
 
-public class ForbiddenException : DomainException
-{
-    public ForbiddenException(string message = "You are not allowed to perform this action.") : base(message) { }
-}
-
-public class ValidationException : DomainException
-{
-    public ValidationException(string message) : base(message) { }
-}
-
 public class UnauthorizedException : DomainException
 {
     public UnauthorizedException(string message = "Invalid credentials.") : base(message) { }
