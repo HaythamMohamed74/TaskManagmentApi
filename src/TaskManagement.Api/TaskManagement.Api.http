@@ -1,6 +1,57 @@
 @TaskManagement.Api_HostAddress = http://localhost:5042
+@token = paste-access-token-here
 
-GET {{TaskManagement.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Login as the seeded admin
+POST {{TaskManagement.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
 
-###
+{
+  "email": "admin@example.com",
+  "password": "Admin@123"
+}
+
+### Register a new user
+POST {{TaskManagement.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "Test@123"
+}
+
+### Current user profile
+GET {{TaskManagement.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Create a task
+POST {{TaskManagement.Api_HostAddress}}/api/tasks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Write report",
+  "description": "Q3 report",
+  "priority": "High"
+}
+
+### List my tasks
+GET {{TaskManagement.Api_HostAddress}}/api/tasks
+Authorization: Bearer {{token}}
+
+### Get a task by id
+GET {{TaskManagement.Api_HostAddress}}/api/tasks/{{taskId}}
+Authorization: Bearer {{token}}
+
+### Update task status
+PUT {{TaskManagement.Api_HostAddress}}/api/tasks/{{taskId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "Done"
+}
+
+### List users (admin only)
+GET {{TaskManagement.Api_HostAddress}}/api/admin/users
+Authorization: Bearer {{token}}
