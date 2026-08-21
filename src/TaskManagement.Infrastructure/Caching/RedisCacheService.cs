@@ -5,8 +5,6 @@ using TaskManagement.Application.Interfaces;
 
 namespace TaskManagement.Infrastructure.Caching;
 
-// Redis failures are logged and swallowed here so a cache outage degrades to
-// "always hit the database" instead of taking the endpoint down.
 public class RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger) : ICacheService
 {
     private IDatabase Db => redis.GetDatabase();
