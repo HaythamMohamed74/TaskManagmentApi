@@ -63,9 +63,7 @@ public class TaskServiceTests
 
         var low = new TaskItem("Low task", null, TaskPriority.Low, userId);
         var highOld = new TaskItem("High old", null, TaskPriority.High, userId);
-        // CreatedAt has limited clock resolution; sleep briefly so the second High task
-        // gets a strictly later timestamp and tie-breaking by CreatedAt is deterministic.
-        await Task.Delay(20);
+        await Task.Delay(20); // force a distinct CreatedAt so tie-breaking is deterministic
         var highNew = new TaskItem("High new", null, TaskPriority.High, userId);
         var medium = new TaskItem("Medium task", null, TaskPriority.Medium, userId);
 
@@ -78,7 +76,6 @@ public class TaskServiceTests
         Assert.All(result.Take(2), t => Assert.Equal(TaskPriority.High, t.Priority));
         Assert.Equal(TaskPriority.Medium, result[2].Priority);
         Assert.Equal(TaskPriority.Low, result[3].Priority);
-        // Among the two High tasks, the earlier-created one (highOld) should come first.
         Assert.Equal(highOld.Id, result[0].Id);
         Assert.Equal(highNew.Id, result[1].Id);
     }
