@@ -54,7 +54,7 @@ public class AuthService(
         var user = await userRepository.GetByIdAsync(existingToken.UserId, ct)
             ?? throw new UnauthorizedException("Invalid or expired refresh token.");
 
-        // Rotate: revoke the used token so it can't be replayed, issue a fresh pair.
+        // rotate so the old token can't be replayed
         existingToken.Revoke();
 
         return await IssueTokensAsync(user, ct);

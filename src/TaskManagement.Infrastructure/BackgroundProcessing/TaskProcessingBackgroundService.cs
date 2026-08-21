@@ -8,8 +8,6 @@ using TaskManagement.Domain.Interfaces;
 
 namespace TaskManagement.Infrastructure.BackgroundProcessing;
 
-// Hosted worker that drains the in-memory queue and simulates processing for
-// newly-created tasks, moving them from Pending to InProgress.
 public class TaskProcessingBackgroundService(
     InMemoryTaskProcessingQueue queue,
     IServiceScopeFactory scopeFactory,
@@ -35,7 +33,6 @@ public class TaskProcessingBackgroundService(
 
     private async Task ProcessAsync(Guid taskId, CancellationToken ct)
     {
-        // Simulate real processing work (e.g. validation, enrichment, notifications).
         await Task.Delay(SimulatedProcessingDelay, ct);
 
         using var scope = scopeFactory.CreateScope();
@@ -52,7 +49,6 @@ public class TaskProcessingBackgroundService(
         task.UpdateStatus(TaskItemStatus.InProgress);
         await taskRepository.SaveChangesAsync(ct);
 
-        // Keep the cache consistent with the DB after this background update.
         await cacheService.SetAsync($"task:{taskId}", task.ToDto(), CacheTtl, ct);
 
         logger.LogInformation("Task {TaskId} processed by background worker, status -> InProgress", taskId);

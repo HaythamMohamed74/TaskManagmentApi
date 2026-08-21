@@ -18,7 +18,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-// Services
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
@@ -82,7 +81,6 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Seed the database (applies migrations + creates the default admin user) on startup.
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -93,7 +91,6 @@ using (var scope = app.Services.CreateScope())
     await DbSeeder.SeedAsync(context, passwordHasher, adminSettings, logger);
 }
 
-// Pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseSwagger();

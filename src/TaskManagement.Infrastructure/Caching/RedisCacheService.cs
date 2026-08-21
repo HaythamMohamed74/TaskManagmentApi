@@ -5,9 +5,8 @@ using TaskManagement.Application.Interfaces;
 
 namespace TaskManagement.Infrastructure.Caching;
 
-// Redis is required by the spec for caching Get-Task-by-Id, but a cache outage should
-// degrade to "always hit the database" rather than take the whole endpoint down.
-// Failures here are logged and swallowed so callers transparently fall back to the DB.
+// Redis failures are logged and swallowed here so a cache outage degrades to
+// "always hit the database" instead of taking the endpoint down.
 public class RedisCacheService(IConnectionMultiplexer redis, ILogger<RedisCacheService> logger) : ICacheService
 {
     private IDatabase Db => redis.GetDatabase();

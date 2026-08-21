@@ -35,7 +35,6 @@ public class UserAdminService(
         var user = await userRepository.GetByIdAsync(userId, ct)
             ?? throw new NotFoundException(nameof(User), userId);
 
-        // Soft delete: keep the row (and any tasks referencing it) but hide the user from listings/auth.
         user.MarkDeleted();
         await userRepository.SaveChangesAsync(ct);
     }

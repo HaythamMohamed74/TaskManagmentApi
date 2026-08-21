@@ -4,8 +4,7 @@ using TaskManagement.Domain.Entities;
 
 namespace TaskManagement.Infrastructure.Auth;
 
-// Wraps ASP.NET Core Identity's PasswordHasher<T> (PBKDF2 under the hood) so we
-// get battle-tested, salted password hashing without pulling in all of Identity.
+// wraps Identity's PasswordHasher<T> (PBKDF2) instead of rolling our own
 public class PasswordHasher : IPasswordHasher
 {
     private readonly PasswordHasher<User> _inner = new();

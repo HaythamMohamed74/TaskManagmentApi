@@ -19,7 +19,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.Email).IsUnique();
 
-        // Soft-deleted users are hidden from every default query (login, listing, etc).
-        builder.HasQueryFilter(u => !u.IsDeleted);
+        builder.HasQueryFilter(u => !u.IsDeleted); // hides soft-deleted users from every query
     }
 }

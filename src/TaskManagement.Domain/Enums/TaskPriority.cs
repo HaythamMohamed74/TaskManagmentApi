@@ -1,6 +1,6 @@
 namespace TaskManagement.Domain.Enums;
 
-// Ordered low-to-high so higher numeric value == higher priority for sorting.
+// numeric order matters, used for sorting by priority
 public enum TaskPriority
 {
     Low = 0,

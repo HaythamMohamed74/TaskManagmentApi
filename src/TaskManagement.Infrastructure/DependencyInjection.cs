@@ -31,9 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
             var redisOptions = ConfigurationOptions.Parse(configuration.GetConnectionString("Redis")!);
-            // Don't crash app startup if Redis isn't reachable yet; commands will simply
-            // fail (and surface as 500s on the caching path) until it comes up.
-            redisOptions.AbortOnConnectFail = false;
+            redisOptions.AbortOnConnectFail = false; // don't block startup if Redis isn't up yet
             return ConnectionMultiplexer.Connect(redisOptions);
         });
         services.AddScoped<ICacheService, RedisCacheService>();

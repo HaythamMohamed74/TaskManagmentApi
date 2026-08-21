@@ -20,7 +20,6 @@ public class TaskService(
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        // Business rule: no two tasks with the same title, for the same user, on the same day.
         if (await taskRepository.ExistsWithTitleOnDateAsync(userId, request.Title, today, ct))
             throw new ConflictException($"A task titled '{request.Title}' was already created today.");
 
@@ -29,7 +28,6 @@ public class TaskService(
         await taskRepository.AddAsync(task, ct);
         await taskRepository.SaveChangesAsync(ct);
 
-        // Hand off to the background worker to simulate further processing.
         processingQueue.QueueTask(task.Id);
 
         return task.ToDto();
@@ -58,7 +56,6 @@ public class TaskService(
     {
         var tasks = await taskRepository.GetAllByUserIdAsync(userId, ct);
 
-        // Business rule: sort by priority (High first), then by creation date (oldest first).
         return tasks
             .OrderByDescending(t => t.Priority)
             .ThenBy(t => t.CreatedAt)
@@ -77,14 +74,13 @@ public class TaskService(
         await taskRepository.SaveChangesAsync(ct);
 
         var dto = task.ToDto();
-        // Refresh the cache so the next Get-by-id read isn't stale.
         await cacheService.SetAsync(CacheKey(taskId), dto, CacheTtl, ct);
         return dto;
     }
 
     private static void EnsureOwnedBy(Guid taskOwnerId, Guid requestingUserId)
     {
-        // Treated as not-found (rather than forbidden) so a user can't probe for other users' task ids.
+        // not-found rather than forbidden, so a user can't probe other users' task ids
         if (taskOwnerId != requestingUserId)
             throw new NotFoundException(nameof(TaskItem), taskOwnerId);
     }
