@@ -1,55 +1,52 @@
 # Task Management Backend API
 
-A simple Task Management backend built with ASP.NET Core (.NET 10), following a clean,
-DDD-style layered architecture. Users can register, log in, and manage their own tasks;
-a seeded admin account can manage users. Task reads are cached in Redis, and newly
-created tasks are handed off to a background worker for simulated processing.
+A Task Management backend built with ASP.NET Core (.NET 10), structured in a DDD-style
+layered architecture. Users can register, log in, and manage their own tasks. A seeded
+admin account can manage users. Task reads are cached in Redis, and new tasks get handed
+off to a background worker for simulated processing.
 
 ## Architecture
 
-The solution is split into four layers plus a test project, each with a single
-responsibility and depending only inward (API → Infrastructure → Application → Domain):
+Four layers plus a test project, each depending only inward (API -> Infrastructure ->
+Application -> Domain):
 
 ```
 TaskManagement.slnx
 src/
   TaskManagement.Domain          Entities, enums, domain exceptions, repository interfaces.
-                                  No dependencies on anything else — pure business model.
-  TaskManagement.Application     DTOs, service interfaces/implementations (business logic),
-                                  and abstractions for things Infrastructure provides
-                                  (ICacheService, IJwtTokenGenerator, IPasswordHasher,
-                                  ITaskProcessingQueue, ICurrentUserService).
-  TaskManagement.Infrastructure  EF Core (DbContext, configurations, migrations, repositories),
-                                  Redis cache implementation, JWT generation, password hashing,
-                                  the in-memory background queue + BackgroundService, and
-                                  admin DB seeding.
-  TaskManagement.Api             Controllers, Program.cs composition root, Swagger/JWT wiring,
-                                  global exception handling middleware.
+                                  No dependencies on anything else.
+  TaskManagement.Application     DTOs, service interfaces/implementations, and abstractions
+                                  for things Infrastructure provides (ICacheService,
+                                  IJwtTokenGenerator, IPasswordHasher, ITaskProcessingQueue,
+                                  ICurrentUserService).
+  TaskManagement.Infrastructure  EF Core (DbContext, configurations, migrations,
+                                  repositories), Redis cache, JWT generation, password
+                                  hashing, the in-memory background queue + BackgroundService,
+                                  admin seeding.
+  TaskManagement.Api             Controllers, Program.cs, Swagger/JWT wiring, exception
+                                  handling middleware.
 tests/
-  TaskManagement.Tests           xUnit + Moq tests for the Application-layer services
-                                  (business rules: duplicate prevention, sorting, ownership).
+  TaskManagement.Tests           xUnit + Moq tests for the Application-layer services.
 ```
 
-Domain entities (`User`, `TaskItem`) encapsulate their own invariants (private setters,
-validation in constructors) rather than being anemic data bags, and expose behavior methods
-(`UpdateStatus`, `MarkDeleted`) instead of public setters — the core DDD idea this task asks
-for, kept intentionally small in scope (no full aggregate root / domain event machinery,
-since that would be overkill for this size of project).
+`User` and `TaskItem` own their invariants: private setters, validation in the
+constructor, behavior methods (`UpdateStatus`, `MarkDeleted`) instead of public setters.
+No aggregate roots or domain events - the project is small enough that it didn't need them.
 
 ## Tech stack
 
 - .NET 10 / ASP.NET Core Web API
-- Entity Framework Core + SQL Server (any local SQL Server instance — LocalDB or
-  SQL Server Express — for local dev, a SQL Server container in Docker)
+- Entity Framework Core + SQL Server (LocalDB or SQL Server Express locally, a SQL Server
+  container in Docker)
 - StackExchange.Redis
-- JWT Bearer authentication (`System.IdentityModel.Tokens.Jwt`)
-- Swashbuckle (Swagger/OpenAPI), with a JWT "Authorize" button
-- Serilog (console logging)
+- JWT Bearer auth (`System.IdentityModel.Tokens.Jwt`)
+- Swashbuckle (Swagger/OpenAPI), with a JWT Authorize button
+- Serilog
 - xUnit + Moq
 
 ## Running the project
 
-### Option A — Docker Compose (recommended, no local installs needed)
+### Option A: Docker Compose
 
 Requires Docker Desktop.
 
@@ -57,33 +54,31 @@ Requires Docker Desktop.
 docker compose up --build
 ```
 
-This starts SQL Server, Redis, and the API together. The API applies EF Core migrations
-and seeds the admin user automatically on startup. Once healthy, browse to:
+Starts SQL Server, Redis, and the API together. Migrations and admin seeding run
+automatically on startup.
 
-- Swagger UI: http://localhost:8080/swagger
+Swagger UI: http://localhost:8080/swagger
 
-### Option B — Run locally against a SQL Server instance you already have
+### Option B: run it locally
 
-Requires the .NET 10 SDK and any local SQL Server instance — LocalDB or SQL Server
-Express both work (this repo's `appsettings.json` defaults to LocalDB,
-`Server=(localdb)\mssqllocaldb;...`; adjust `ConnectionStrings:DefaultConnection` if
-you're using a named SQL Server Express instance instead, e.g.
-`Server=YOUR-MACHINE\SQLEXPRESS;...`). You'll also need a Redis instance
-reachable at `localhost:6379` — the easiest way is `docker run -p 6379:6379 redis:7-alpine`
-if you have Docker, or point `ConnectionStrings:Redis` in `appsettings.json` at any Redis
-you have.
+Requires the .NET 10 SDK and a local SQL Server instance - LocalDB or SQL Server Express
+both work. `appsettings.json` currently points at LocalDB
+(`Server=(localdb)\mssqllocaldb;...`); change `ConnectionStrings:DefaultConnection` if
+you're on a named instance instead. You'll also need Redis reachable at `localhost:6379`
+(`docker run -p 6379:6379 redis:7-alpine` if you have Docker, or point
+`ConnectionStrings:Redis` at whatever Redis you have).
 
 ```bash
 dotnet ef database update --project src/TaskManagement.Infrastructure --startup-project src/TaskManagement.Api
 dotnet run --project src/TaskManagement.Api
 ```
 
-(The app also applies migrations automatically on startup, so the explicit `ef database
-update` above is optional — it's just handy if you want the schema created up front.)
+The app applies migrations on startup anyway, so the `ef database update` step above is
+optional - just handy if you want the schema created up front.
 
 Swagger UI: http://localhost:5080/swagger (or whichever port `dotnet run` prints).
 
-### Running the tests
+### Tests
 
 ```bash
 dotnet test
@@ -91,105 +86,72 @@ dotnet test
 
 ## Seeded admin credentials
 
-On first startup, a default admin user is seeded (see `AdminSeed` in `appsettings.json`):
+- Email: `admin@example.com`
+- Password: `Admin@123`
 
-- **Email:** `admin@example.com`
-- **Password:** `Admin@123`
+Set via `AdminSeed` in `appsettings.json`. Change these before deploying anywhere real.
 
-Change these in `appsettings.json` (or via environment variables /
-`AdminSeed__Email` / `AdminSeed__Password`) before deploying anywhere real —
-they're intentionally simple defaults for review purposes.
+## Auth
 
-## Authentication & authorization
+- `POST /api/auth/register` - anyone can register, always as role `User`. Returns an
+  access token + refresh token.
+- `POST /api/auth/login` - same, returns both tokens.
+- `POST /api/auth/refresh` - exchanges a valid refresh token for a new pair. The old one
+  gets revoked immediately, so it's useless even if it leaks after being used once.
+- `POST /api/auth/logout` - revokes a refresh token.
+- `GET /api/auth/me` - current user's profile.
+- `GET/POST/DELETE /api/admin/users/*` - admin only.
+- `POST/GET/PUT /api/tasks/*` - any authenticated user, but only for their own tasks.
+  Hitting another user's task returns 404, not 403, so you can't tell the difference
+  between "doesn't exist" and "exists but isn't yours."
 
-- `POST /api/auth/register` — anyone can register (always as role `User`). Returns an
-  access token + refresh token pair.
-- `POST /api/auth/login` — returns an access token + refresh token pair.
-- `POST /api/auth/refresh` — exchanges a still-valid refresh token for a new pair.
-  The old refresh token is revoked immediately (rotation), so a leaked/stolen refresh
-  token that's already been used once is a dead end for an attacker.
-- `POST /api/auth/logout` — revokes a refresh token (requires an access token).
-- `GET /api/auth/me` — returns the current user's profile (any authenticated user).
-- `GET/POST/DELETE /api/admin/users/*` — **Admin role only** (`[Authorize(Roles = "Admin")]`).
-- `POST/GET/PUT /api/tasks/*` — any authenticated user; a user may only read/update
-  **their own** tasks. Attempting to access another user's task returns `404 Not Found`
-  (not `403`) so a user can't tell the difference between "doesn't exist" and "exists but
-  isn't yours" — a deliberate choice to avoid leaking other users' task IDs.
-
-Click **Authorize** in Swagger UI and paste `Bearer <token>` (or just the raw token,
-Swashbuckle's HTTP-bearer scheme prepends `Bearer ` for you) to call protected endpoints
-from the docs page.
+In Swagger, click Authorize and paste just the token, no `Bearer ` prefix - Swashbuckle
+adds that itself.
 
 ## Redis caching
 
-`GET /api/tasks/{id}` is cached in Redis under key `task:{id}` with a 5-minute TTL:
+`GET /api/tasks/{id}` is cached under `task:{id}` for 5 minutes. The first request loads
+from SQL Server and writes to Redis; later requests come straight from Redis. Updating a
+task's status refreshes that cache entry so nothing goes stale.
 
-1. First request → cache miss → loaded from SQL Server → written to Redis.
-2. Subsequent requests → served straight from Redis.
-3. `PUT /api/tasks/{id}/status` refreshes (overwrites) that same cache entry with the
-   updated value, so readers never see stale data after a status change.
-
-The background worker (below) also refreshes the cache entry after it moves a task from
-`Pending` to `InProgress`, for the same reason.
-
-**Resilience note:** cache reads/writes are wrapped so a Redis outage degrades to
-"always hit the database" (logged as a warning) instead of failing the request — a cache
-should never be a single point of failure for the primary read/write path.
+If Redis is down, reads/writes are caught and logged as warnings instead of failing the
+request - it just falls back to hitting the database every time.
 
 ## Background processing
 
-`POST /api/tasks` saves the task to the database, then hands its ID to an in-memory queue
-(`System.Threading.Channels.Channel<Guid>`). A hosted `BackgroundService`
-(`TaskProcessingBackgroundService`) drains that queue, simulates processing work with a
-short delay, and moves the task from `Pending` → `InProgress`, refreshing the Redis cache
-entry to match. This satisfies the "simple background processing" requirement without an
-external broker (RabbitMQ/etc.), per the task instructions.
+Creating a task saves it to the DB, then queues its ID on an in-memory `Channel<Guid>`. A
+`BackgroundService` drains that channel, waits a few seconds to simulate real work, and
+flips the task from `Pending` to `InProgress`, updating the cache to match.
 
-## Business logic implemented
+## Business logic
 
-- **Sorting:** `GET /api/tasks` returns the current user's tasks sorted by priority
-  (`High` → `Medium` → `Low`), then by creation date ascending (oldest first) within the
-  same priority.
-- **Duplicate prevention:** creating a task with a title that already exists for the same
-  user, created on the same UTC calendar day, is rejected with `409 Conflict`.
+- Tasks are sorted by priority first (High, Medium, Low), then by creation date within
+  the same priority.
+- Creating a task with the same title, for the same user, on the same day returns
+  409 Conflict.
 
-## Other things implemented (bonus)
+## Other stuff (bonus items)
 
-- **Global exception handling** — a single middleware maps domain exceptions
-  (`NotFoundException`, `ConflictException`, `UnauthorizedException`, etc.) to the right
-  HTTP status + a `application/problem+json` body; anything unexpected becomes a logged
-  `500` without leaking internals.
-- **Docker support** — `Dockerfile` + `docker-compose.yml` (API + SQL Server + Redis).
-- **Unit tests** — `TaskService` and `AuthService` business rules (duplicate prevention,
-  sorting, ownership checks, credential validation).
-- **Structured logging** — Serilog to console.
-- **Soft delete for users** — `DELETE /api/admin/users/{id}` sets `IsDeleted = true`
-  rather than removing the row; deleted users are excluded from `GetAll`, login, and
-  existence checks via an EF Core global query filter.
-- **Refresh tokens** — opaque, cryptographically random tokens (64 random bytes,
-  `RandomNumberGenerator`) stored in a `RefreshTokens` table, valid for 7 days. Using one
-  via `/api/auth/refresh` rotates it (the old one is revoked, a new pair is issued), and
-  `/api/auth/logout` revokes one explicitly. Access tokens stay short-lived (60 minutes,
-  configurable via `Jwt:ExpiryMinutes`); refresh tokens are how a client stays signed in
-  without re-entering credentials every hour.
+- Global exception handling middleware - maps domain exceptions to proper status codes
+  plus a `problem+json` body.
+- Docker support (Dockerfile + docker-compose.yml).
+- Unit tests for `TaskService` and `AuthService`.
+- Serilog logging.
+- Soft delete for users - an `IsDeleted` flag plus a global query filter, so deleted
+  users disappear from listings/login without losing their data.
+- Refresh tokens - random 64-byte tokens stored in a `RefreshTokens` table, 7-day expiry,
+  rotated on use, revocable via logout.
 
 ## Assumptions
 
-- **Database:** SQL Server was chosen over PostgreSQL (both were offered as options).
-  Any local SQL Server instance (LocalDB or SQL Server Express) works for zero-friction
-  local development on Windows; Docker Compose ships a real SQL Server 2022 container
-  for anything closer to production.
-- **"Sort by priority"** is interpreted as highest-priority-first (`High`, `Medium`, `Low`),
-  since the task description didn't specify a direction.
-- **"Duplicate task" scope** is per-user, per-title, per UTC calendar day (matching "same
-  title on the same day for the same user" from the spec) — titles are compared after
-  trimming whitespace, case-sensitively.
-- **Ownership violations return 404, not 403** (see Authorization section above) — a
-  deliberate anti-enumeration choice, called out since the spec didn't say either way.
-- **Background processing target status:** the spec doesn't say what the "processed"
-  status should be, only that the worker should "update the task accordingly." It moves
-  `Pending` → `InProgress` (representing "picked up and being worked on"), leaving the
-  user free to mark it `Done` themselves via the status endpoint.
-- **JWT secret** in `appsettings.json` is a placeholder for review purposes — replace
-  `Jwt:Secret` with a real secret (e.g. via environment variable or user-secrets) for any
-  non-local use.
+- SQL Server over PostgreSQL, since both were allowed. LocalDB/SQL Server Express for
+  local dev, a real SQL Server container in Docker.
+- "Sort by priority" means highest first.
+- Duplicate detection is per-user, per-title, per calendar day (UTC), case-sensitive
+  after trimming whitespace.
+- Task ownership violations return 404 instead of 403, to avoid leaking other users'
+  task IDs.
+- The background worker moves tasks from Pending to InProgress, since the spec doesn't
+  say what status they should land on.
+- The JWT secret in `appsettings.json` is a placeholder - swap it for a real one outside
+  local dev.
