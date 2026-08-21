@@ -5,6 +5,10 @@ layered architecture. Users can register, log in, and manage their own tasks. A 
 admin account can manage users. Task reads are cached in Redis, and new tasks get handed
 off to a background worker for simulated processing.
 
+## Video walkthrough
+
+https://drive.google.com/file/d/1zU7NNGbrZJbNt8XOknfeiWst8ASQnhGp/view
+
 ## Architecture
 
 Four layers plus a test project, each depending only inward (API -> Infrastructure ->
